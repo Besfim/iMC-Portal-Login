@@ -70,6 +70,7 @@ func initImcGDPU() {
 		colly.Async(false)
 		// TODO 作者标记
 		// TODO 获取新版本
+		// TODO 强制下线的 flag
 	}
 }
 
@@ -84,7 +85,13 @@ func getCookieAndPL() (string, string) {
 	}
 	c.OnResponse(func(response *colly.Response) {
 		cookie = response.Headers.Get("Set-Cookie")
-		pl = strings.Split(strings.Split(cookie, ";")[0], "=")[1]
+		if cookie == "" {
+			debugLog("登录页面返回 cookie : "+cookie)
+			log("登录页面访问失败, 程序退出")
+			os.Exit(0)
+		}else {
+			pl = strings.Split(strings.Split(cookie, ";")[0], "=")[1]
+		}
 	})
 	c.Request("GET", "http://10.50.15.9/portal/templatePage/20170110154814101/login_custom.jsp?userip=", nil, nil, header)
 	return cookie, pl
@@ -250,7 +257,7 @@ func stayConnect(cookie string, pl string)  {
 // 打印 debug 日志
 func debugLog(msg string) {
 	if *debug {
-		fmt.Println("[LOG] [DEBUG] ["+getTime(time.Now())+"]:", msg)
+		fmt.Println("[LOG] [DEBUG]   ["+getTime(time.Now())+"]:", msg)
 	}
 }
 

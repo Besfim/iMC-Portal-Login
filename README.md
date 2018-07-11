@@ -7,9 +7,14 @@
  程序用 Golang 来编码所以可以方便的打包成二进制文件给各个平台使用
 
 ## 使用教程
-## 编译 
+## 编译
+添加了相关依赖之后
 
     go build iMCLogin.go -o iMCLogin
+
+或者直接
+
+    sh build.sh
 
 ## 启动
 
