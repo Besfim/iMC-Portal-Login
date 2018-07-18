@@ -66,12 +66,12 @@ func inputExit(cookie string, pl string ){
 				}
 			}
 			log("程序已退出")
+			os.Exit(0)
 			break
 		}else {
 			fmt.Println("输入 exit 可下线并退出程序")
 		}
 	}
-	os.Exit(0)
 }
 
 //初始化
