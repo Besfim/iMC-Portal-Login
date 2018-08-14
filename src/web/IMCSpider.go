@@ -160,8 +160,6 @@ func Logout(userNum string, cookie string, pl string) bool {
 
 //这个方法是用来确保程序已经退出的
 func EnsureLogout(userNum string, userPw string) bool {
-	// TODO 登录一次, 如果登录显示 "服务器错误" 证明下线
-	// TODO 如果能够成功登录, 那么就证明之前已经下线, 所以需要直接调用 logout 方法下线
 	cookie,pl := GetCookieAndPL()
 	c := colly.NewCollector()
 	successFlag := false

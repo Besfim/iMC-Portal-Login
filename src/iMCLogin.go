@@ -90,7 +90,6 @@ func initImcGDPU() {
 		colly.Async(false)
 		// TODO 作者标记
 		// TODO 获取新版本
-		// TODO 强制下线的 flag
 	}
 }
 
