@@ -9,6 +9,7 @@ import (
 	"os"
 	"bufio"
 	"web"
+	"gui"
 )
 
 var Debug = flag.Bool("d",false,"开启 DEBUG 日志打印")
@@ -23,7 +24,12 @@ var UserPw = flag.String("p","null","校园网密码")
 const heartBeatInterval time.Duration = 30
 
 func main() {
+	//CommonLineRun()
+	gui.Run()
 
+}
+
+func CommonLineRun() {
 	initImcGDPU()
 	web.DebugLog("userName:" + *UserNum + ", password: " + *UserPw)
 
@@ -38,6 +44,10 @@ func main() {
 			web.Log("联网失败, 请检查网络连接")
 		}
 	}
+}
+
+func GuiRun() {
+
 }
 
 func inputExit(cookie string, pl string ){
