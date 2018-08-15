@@ -1,11 +1,10 @@
-package web
+package utils
 
 
 import (
 	"github.com/gocolly/colly"
 	"net/http"
-	"os"
-	"strings"
+		"strings"
 	"encoding/base64"
 	"net/url"
 	"strconv"
@@ -15,6 +14,12 @@ import (
 
 // 起始联网时间戳
 var startTime string
+// 心跳包发送间隔,单位是秒
+const heartBeatInterval time.Duration = 30
+
+type Callback func(info string)
+
+type CallBack2P func(cookie string, pl string)
 
 //获取 cookie
 func GetCookieAndPL() (string, string) {
@@ -32,12 +37,34 @@ func GetCookieAndPL() (string, string) {
 	c.Request("GET", "http://10.50.15.9/portal/templatePage/20170110154814101/login_custom.jsp?userip=", nil, nil, header)
 	if cookie == "" {
 		DebugLog("登录页面返回 cookie : "+cookie)
-		Log("登录页面访问失败, 程序退出")
-		os.Exit(0)
+		Log("登录页面访问失败,")
+		return "null", "null"
 	}else {
 		pl = strings.Split(strings.Split(cookie, ";")[0], "=")[1]
 	}
 	return cookie, pl
+}
+
+func GetCookieAndPLWithCB(callback CallBack2P) {
+	c := colly.NewCollector()
+	var cookie string
+	var pl string
+	header := http.Header{
+		"User-Agent":      []string{"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"},
+		"Accept":          []string{"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"},
+		"Accept-Language": []string{"zh-CN,zh;q=0.9,en-GB;q=0.8,en;q=0.7"},
+	}
+	c.OnResponse(func(response *colly.Response) {
+		cookie = response.Headers.Get("Set-Cookie")
+	})
+	c.Request("GET", "http://10.50.15.9/portal/templatePage/20170110154814101/login_custom.jsp?userip=", nil, nil, header)
+	if cookie == "" {
+		DebugLog("登录页面返回 cookie : "+cookie)
+		Log("登录页面访问失败,")
+	}else {
+		pl = strings.Split(strings.Split(cookie, ";")[0], "=")[1]
+	}
+	callback(cookie, pl)
 }
 
 //登录
@@ -115,6 +142,87 @@ func Login(userNum string, userPw string, cookie string, pl string) bool {
 	)
 	return successFlag
 }
+
+//登录
+func LoginWithCB(userNum string, userPw string, cookie string, pl string, callback Callback) bool {
+	c := colly.NewCollector()
+	successFlag := false
+
+	header := http.Header{
+		"Cookie":          []string{cookie},
+		"User-Agent":      []string{"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"},
+		"Accept":          []string{"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"},
+		"Accept-Language": []string{"zh-CN,zh;q=0.9,en-GB;q=0.8,en;q=0.7"},
+	}
+	formDate := map[string]string{
+		"userName":            userNum,
+		"userPwd":             base64.StdEncoding.EncodeToString([]byte(userPw)),
+		"userDynamicPwd":      "",
+		"userDynamicPwdd":     "",
+		"serviceTypeHIDE":     "",
+		"serviceType":         "",
+		"userurl":             "",
+		"userip":              "",
+		"basip":               "",
+		"language":            "Chinese",
+		"usermac":             "null",
+		"wlannasid":           "",
+		"wlanssid":            "",
+		"entrance":            "null",
+		"loginVerifyCode":     "",
+		"userDynamicPwddd":    "",
+		"customPageId":        "105",
+		"pwdMode":             "0",
+		"portalProxyIP":       "10.50.15.9",
+		"portalProxyPort":     "50200",
+		"dcPwdNeedEncrypt":    "1",
+		"assignIpType":        "0",
+		"appRootUrl":          "http://10.50.15.9/portal/",
+		"manualUrl":           "",
+		"manualUrlEncryptKey": "",
+	}
+	c.OnResponse(func(response *colly.Response) {
+		info := string(response.Body)
+		DebugLog("登录返回info : " + info)
+		decodeTemp := decodeRespInfo(info)
+		respJson, _ := url.QueryUnescape(decodeTemp)
+		DebugLog("登录返回 : " + respJson)
+		startTime = strconv.FormatInt(time.Now().UnixNano(),10)[0:13]
+		// 登录成功 {"errorNumber":"1","heartBeatCyc":900000,"heartBeatTimeoutMaxTime":2,"userDevPort":"Servers-Aggregation-SW-S5560X-54C-EI-vlan-01-4055@vlan","userStatus":99,"serialNo":4686,"ifNeedModifyPwd":false,"browserUrl":"","clientPrivateIp":"","userurl":"","usermac":null,"nasIp":"","clientLanguage":"Chinese","ifTryUsePopupWindow":true,"triggerRedirectUrl":"","portalLink":"JTdCJTIyZXJyb3JOdW1iZXIlMjIlM0ElMjIxJTIyJTJDJTIyaGVhcnRCZWF0Q3ljJTIyJTNBOTAwMDAwJTJDJTIyaGVhcnRCZWF0VGltZW91dE1heFRpbWUlMjIlM0EyJTJDJTIydXNlckRldlBvcnQlMjIlM0ElMjJTZXJ2ZXJzLUFnZ3JlZ2F0aW9uLVNXLVM1NTYwWC01NEMtRUktdmxhbi0wMS00MDU1JTQwdmxhbiUyMiUyQyUyMnVzZXJTdGF0dXMlMjIlM0E5OSUyQyUyMnNlcmlhbE5vJTIyJTNBNDY4NiUyQyUyMmlmTmVlZE1vZGlmeVB3ZCUyMiUzQWZhbHNlJTJDJTIyYnJvd3NlclVybCUyMiUzQSUyMiUyMiUyQyUyMmNsaWVudFByaXZhdGVJcCUyMiUzQSUyMiUyMiUyQyUyMnVzZXJ1cmwlMjIlM0ElMjIlMjIlMkMlMjJ1c2VybWFjJTIyJTNBbnVsbCUyQyUyMm5hc0lwJTIyJTNBJTIyJTIyJTJDJTIyY2xpZW50TGFuZ3VhZ2UlMjIlM0ElMjJDaGluZXNlJTIyJTJDJTIyaWZUcnlVc2VQb3B1cFdpbmRvdyUyMiUzQXRydWUlMkMlMjJ0cmlnZ2VyUmVkaXJlY3RVcmwlMjIlM0ElMjIlMjIlN0Q"}
+		if strings.Contains(respJson, "errorNumber") && strings.Contains(respJson, "heartBeatTimeoutMaxTime") {
+			successFlag = true
+		}else if strings.Contains(respJson,"E63032:密码错误") {
+			// 密码错误 	{"portServIncludeFailedCode":"63032","portServIncludeFailedReason":"E63032:密码错误，您还可以重试8次。","e_c":"portServIncludeFailedCode","e_d":"portServIncludeFailedReason","errorNumber":"7"}
+			Log("用户密码错误")
+			callback("用户密码错误")
+			successFlag = false
+		}else if strings.Contains(respJson,"E63018:用户不存在或者用户没有申请该服务") {
+			// 用户名不存在 {"portServIncludeFailedCode":"63018","portServIncludeFailedReason":"E63018:用户不存在或者用户没有申请该服务。","e_c":"portServIncludeFailedCode","e_d":"portServIncludeFailedReason","errorNumber":"7"}
+			Log("用户已经登录, 尝试强制下线后重新登录")
+			callback("用户已经登录, 尝试强制下线后重新登录")
+			successFlag = false
+		}else if strings.Contains(respJson,"设备拒绝请求") {
+			// 已经登录		{"portServErrorCode":"1","portServErrorCodeDesc":"设备拒绝请求","e_c":"portServErrorCode","e_d":"portServErrorCodeDesc","errorNumber":"7"}
+			Log("用户已经登录, 尝试强制下线后重新登录")
+			successFlag = LoginWithCB(userNum, userPw, cookie, pl, callback)
+		}else {
+			//
+			Log("登录失败, 错误信息如下: "+respJson)
+			callback("登录失败, 错误信息如下: "+respJson)
+			successFlag = false
+		}
+	})
+	c.Request(
+		"POST",
+		"http://10.50.15.9/portal/pws?t=li",
+		createFormReader(formDate),
+		nil,
+		header,
+	)
+	return successFlag
+}
+
+
 
 func HeartBeat(cookie string, pl string) {
 	c := colly.NewCollector()
@@ -254,6 +362,57 @@ func IsConnect() bool {
 		DebugLog("网络不联通")
 	}
 	return connectFlag
+}
+
+var reConnectTime = 0
+func StayConnectWithCB(userNum string, userPw string, cookie string, pl string, callback Callback)  {
+	for {
+		if reConnectTime > 10 {
+			Log("连接失败次数过多, 请确认是否联网")
+			callback("连接失败次数过多, 请确认是否联网")
+			break
+		}
+		HeartBeat(cookie, pl)
+		if !IsConnect() {
+			Log("发送心跳包后联网失败, 尝试重新连接")
+			callback("发送心跳包后联网失败, 尝试重新连接")
+			reConnectTime++
+			cookie,pl := GetCookieAndPL()
+			Login(userNum, userPw, cookie,pl)
+			if IsConnect() {
+				Log("联网成功")
+				callback("联网成功")
+			}else {
+				continue
+			}
+		}else {
+			reConnectTime = 0
+		}
+		time.Sleep(time.Second * heartBeatInterval)
+	}
+}
+
+func StayConnect(userNum string, userPw string, cookie string, pl string)  {
+	for {
+		if reConnectTime > 10 {
+			Log("连接失败次数过多, 请确认是否联网")
+		}
+		HeartBeat(cookie, pl)
+		if !IsConnect() {
+			Log("发送心跳包后联网失败, 尝试重新连接")
+			reConnectTime++
+			cookie,pl := GetCookieAndPL()
+			Login(userNum, userPw, cookie,pl)
+			if IsConnect() {
+				Log("联网成功")
+			}else {
+				continue
+			}
+		}else {
+			reConnectTime = 0
+		}
+		time.Sleep(time.Second * heartBeatInterval)
+	}
 }
 
 func decodeRespInfo(msg string) string {
