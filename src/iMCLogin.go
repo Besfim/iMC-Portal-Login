@@ -25,6 +25,7 @@ const heartBeatInterval time.Duration = 30
 
 func main() {
 	//CommonLineRun()
+	//gui.TestRun()
 	gui.Run()
 
 }

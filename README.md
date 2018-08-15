@@ -1,5 +1,10 @@
 # iMC-Portal-Login
-适用于 GDPU 的 iMC Portal 无线网络登录工具, 
+适用于 GDPU 的 iMC Portal 无线网络登录工具, 该分支完成了一个 GUI 界面
+
+![screenshot/ss1.png](screenshot/ss1.png)
+
+![screenshot/ss2.png](screenshot/ss2.png)
+
 
 ## 前言说明
 学校之前开通了 iMC Portal 无线网络, 只是每次都要开启浏览器才可以登录, 并且需要一直开着一个标签, 这是件很麻烦的事情, 而且最近 (2018-07-11) 发现会出现每隔 15 分钟就断线一次的问题, 所以抓包来模拟登录, 并且在断线之后自动重连
@@ -7,30 +12,9 @@
  程序用 Golang 来编码所以可以方便的打包成二进制文件给各个平台使用
 
 ## 使用教程
-## 编译
-添加了相关依赖之后
-
-    go build iMCLogin.go -o iMCLogin
-
-或者直接
-
-    sh build.sh
-
-## 启动
-
-    ./iMCLogin -u 学号 -p 用户密码
-
-## 参数列表
-
-    
-    -p string
-        校园网密码 (default "null")
-    -u string
-        学生学号 (default "null")
-    -d
-        开启 DEBUG 日志打印
-    -o 
-        强制退出之前登录的帐号, 确保帐号已下线, 也要求输入正确的用户名和密码参数
+ - 输入帐号密码
+ - 点击上线按钮上线
+ - 点击下线按钮下线
 
 ## 其他说明
 ### 关于强制退出
