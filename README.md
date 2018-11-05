@@ -6,6 +6,8 @@
  
  程序用 Golang 来编码所以可以方便的打包成二进制文件给各个平台使用
 
+更多关于爬虫这块的详情可以查看 ： [iMCPortal-连接过程解析及Golang实现](https://blog.meetwhy.com/blog/iMCPortal.html)
+
 ## 使用教程
 ## 编译
 添加了相关依赖之后
